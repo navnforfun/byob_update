@@ -98,7 +98,7 @@ else:
 
 # packages
 import colorama
-
+import socket
 # modules
 from buildyourownbotnet.core import util
 from buildyourownbotnet.core import security 
@@ -119,7 +119,19 @@ __banner = """
                 d8'
                d8'
 """
-C2_HOST = util.public_ip()
+def local_ip(default="127.0.0.1") -> str:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # Any reachable IP works; no packets are sent for UDP connect()
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    except OSError:
+        return default
+    finally:
+        s.close()
+
+# usage
+C2_HOST = local_ip()
 C2_PORT = '1337'
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
